@@ -9,7 +9,7 @@ Accepted
 ## Context
 
 Modules 03 through 06 — device compliance, Autopilot, update rings, and Defender for Endpoint — were
-designed as part of this landing zone before any of them was built. The plan was to define them in
+designed as part of this baseline before any of them was built. The plan was to define them in
 Terraform using AzAPI, on the reasoning that AzAPI can reach Azure resources the first-class providers
 have not yet modelled.
 
@@ -50,7 +50,7 @@ That is a property of the design, not a commitment to build it.
   emergency-account passkeys — are labelled as such where they are claimed.
 - **Positive:** The reasoning is legible. A reader can see that the boundary was reached by evaluating
   a provider landscape, not by running out of time.
-- **Negative:** The Zero Trust device pillar is documented and not implemented, so the landing zone
+- **Negative:** The Zero Trust device pillar is documented and not implemented, so the baseline
   covers identity and detection rather than the full model. `docs/threat-model.md` records the
   unmitigated device threat rather than hiding it.
 - **Negative:** All four directories contain design notes and no implementation, which a reader who

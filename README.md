@@ -1,12 +1,22 @@
-# Azure Entra Zero Trust Landing Zone
+# Entra Zero Trust Identity Baseline
 
-[![Terraform](https://img.shields.io/badge/Terraform-%E2%89%A5%201.7-7B42BC?logo=terraform&logoColor=white)](https://developer.hashicorp.com/terraform) ![Microsoft Entra ID](https://img.shields.io/badge/Microsoft%20Entra%20ID-0078D4?logo=microsoftazure&logoColor=white) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) ![Release: v1.0.1](https://img.shields.io/badge/Release-v1.0.1-blue) ![Scope: identity and detection](https://img.shields.io/badge/Scope-identity%20%2B%20detection-informational)
+[![Terraform](https://img.shields.io/badge/Terraform-%E2%89%A5%201.7-7B42BC?logo=terraform&logoColor=white)](https://developer.hashicorp.com/terraform) ![Microsoft Entra ID](https://img.shields.io/badge/Microsoft%20Entra%20ID-0078D4?logo=microsoftazure&logoColor=white) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) ![Release: v1.0.2](https://img.shields.io/badge/Release-v1.0.2-blue) ![Scope: identity and detection](https://img.shields.io/badge/Scope-identity%20%2B%20detection-informational)
 
 A **Terraform-driven** Zero Trust identity baseline for Microsoft Entra ID, built and tested in a lab tenant. Four Conditional Access policies are rendered from one reusable module. Two emergency accounts use portal-managed passkeys and belong to two code-defined exclusion groups. Two Sentinel rules monitor the emergency path; the third is a tenant-wide password-spray indicator. The accounts, groups, policies and detections are defined as code; passkeys and PIM are portal-managed. See the [control evidence index](docs/screenshots.md#control-evidence-index).
 
 Start with the evidence: [What If results, test sign-ins, Sentinel alerts and ingestion measurements](docs/screenshots.md), and the [decision records](docs/adr/) behind each trade-off.
 
 > **Status: archived lab.** The configuration and tests document the historical licensed lab window. The owner reports that the trial licences have expired; no expiry date is asserted. Current tenant operation and premium-control operation are unverified, and licence expiry does not establish decommissioning. Device management (Intune, Autopilot, update rings, Defender for Endpoint) is out of scope; see [Scope boundary](#scope-boundary). PIM is **Portal-managed and evidenced** for a test administrator, with the limits documented [below](#known-limitations).
+
+## Engineering practices
+
+- Two roots, separate state: [terraform/](terraform/) (`azuread`) and [terraform/detections/](terraform/detections/) (`azurerm`).
+- [CI on both roots](.github/workflows/terraform.yml): `fmt -check`, `init -backend=false`, `validate`; Terraform pinned to 1.15.7; no plan/apply in public CI.
+- Guardrail: [CA module preconditions](terraform/modules/conditional-access-policy/main.tf) reject an enabled block-All-users policy with no exclusion.
+- [`prevent_destroy` on emergency accounts](terraform/break-glass.tf).
+- [Staged plan-to-file deployment ordered around the recovery path](#deploy-it-yourself).
+- [6 ADRs, each with alternatives considered](docs/adr/).
+- [Fixed-meaning control statuses](#control-status) and [dated evidence](docs/screenshots.md).
 
 ## Why this exists
 
@@ -211,6 +221,12 @@ The emergency-access design and its trade-offs are in [ADR-002](docs/adr/adr-002
 - **PIM is Portal-managed and evidenced**, not code-defined. [v1-02 through v1-07](docs/screenshots.md#privileged-identity-management) show Conditional Access Administrator for `admin_test@dhanzlabs.com`: activation settings, eligibility, justification, an active assignment with expiry, a successful activation audit and later absence from the filtered active list. MFA on activation is configured; a challenge is not captured. The later list does not prove post-expiry access denial. These are historical observations, not evidence of current premium-control operation.
 - **Provider versions:** `hashicorp/azuread ~> 2.50` (v2.53.1 in use). The v3 line has not been adopted.
 - **CA005 and CA006 are not implemented** — not planned for this release.
+- **Hardening backlog (not done in this lab):**
+  - Remote state with locking
+  - OIDC/workload identity for CI, needed before plan/apply could run in a pipeline
+  - TFLint and an IaC scanner in CI
+  - PIM as code
+  - `azuread` provider v3 adoption
 - Fuller detail, including the reference tenant profile every trade-off is sized against, is in [assumptions & limitations](docs/assumptions-limitations.md).
 
 ## Design docs
