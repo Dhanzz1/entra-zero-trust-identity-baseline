@@ -4,7 +4,7 @@
 
 ## Purpose
 
-The identity baseline establishes the starting controls for an Azure Entra Zero Trust Landing Zone: emergency access, baseline user grouping, password reset expectations, password protection, naming discipline, and licence assignment.
+This module sets the starting controls for the baseline: emergency access, baseline user grouping, password reset expectations, password protection, naming discipline, and licence assignment.
 
 Zero Trust depends on identity first because every later control, including Conditional Access, device requirements, application access, and privilege governance, assumes that users, groups, recovery paths, and authentication settings are known and controlled.
 

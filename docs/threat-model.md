@@ -1,7 +1,7 @@
 # Threat Model
 
 ## Objectives
-A lightweight threat → control mapping for the identity attack surface this landing zone addresses, together with the device-side threats it models but deliberately does not control. The goal is to show that each control exists to counter a specific, named threat — not to collect features, and not to imply coverage this repository does not have.
+A lightweight threat → control mapping for the identity attack surface this baseline addresses, together with the device-side threats it models but deliberately does not control. The goal is to show that each control exists to counter a specific, named threat — not to collect features, and not to imply coverage this repository does not have.
 
 ## Key Threat Scenarios
 Primary misuse, compromise, and bypass scenarios modelled here: MFA bypass via legacy protocols, credential phishing, actively compromised sessions, high-risk users, non-compliant/infected devices, privileged-account abuse, administrator lockout, external oversharing, and break-glass misuse.

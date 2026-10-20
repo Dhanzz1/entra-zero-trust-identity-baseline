@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The Conditional Access policy framework — the central control plane of this landing zone, where identity, device, and risk signals converge into an enforceable allow/block. Implemented as a single reusable Terraform module so every policy is consistent, parameterised, and reviewable as code.
+The Conditional Access policy framework — the central control plane of this baseline, where identity and risk signals converge into an enforceable allow/block. Device signals are designed but out of scope (see ADR-006). Implemented as a single reusable Terraform module so every policy is consistent, parameterised, and reviewable as code.
 
 ## What this codifies
 

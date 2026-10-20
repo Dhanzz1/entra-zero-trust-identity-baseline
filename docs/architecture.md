@@ -7,7 +7,7 @@ Device management is out of scope for this release, so no device-management enti
 All ADR trade-offs are written against this context; larger enterprises may choose stricter admin recovery, service-account isolation, and more formal exception workflows.
 
 ## Design principles
-This landing zone applies the three Zero Trust tenets. Device trust is a tenet of the model, not a control this release implements:
+This baseline applies the three Zero Trust tenets. Device trust is a tenet of the model, not a control this release implements:
 - **Verify explicitly** — every access decision uses identity and risk signals (Conditional Access + Identity Protection). Device state is a designed input to the same decision point, but no device signal is collected here and no policy consumes one.
 - **Least privilege** — standing privilege is limited to two passkey-protected emergency accounts, and a Sentinel analytics rule alerts on their interactive sign-ins. Day-to-day admin is designed around PIM: the Conditional Access Administrator eligible assignment for a test admin, and its activation settings, were portal-managed during the licensed lab window. [The images](screenshots.md#privileged-identity-management) evidence activation and justification; MFA is configured rather than shown challenging.
 - **Assume breach** — legacy authentication blocked, high sign-in risk blocked, three Sentinel analytics rules deployed as code, and the emergency-access exclusion groups themselves monitored for membership change.
