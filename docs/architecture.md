@@ -1,58 +1,50 @@
 # Architecture
 
 ## Reference context
-This reference design is anchored to a cloud-first organization with roughly 100-500 users.
-It assumes Entra ID P2 licensing, an Australia-based operating context, no on-prem AD dependency, and moderate risk tolerance.
-Device management is out of scope for this release, so no device-management entitlement is assumed — see the [scope boundary](../README.md#scope-boundary).
-All ADR trade-offs are written against this context; larger enterprises may choose stricter admin recovery, service-account isolation, and more formal exception workflows.
+I designed this for a cloud-first organisation of about 100 to 500 users in Australia, with Entra ID P2, no on-premises AD, and moderate risk tolerance. Device management is out of scope, so no device licensing is assumed (see [what I left out](../README.md#what-i-left-out-and-why)). Every trade-off in the ADRs is sized against this context. A larger enterprise would likely want stricter admin recovery, service-account isolation and a formal exception process.
 
 ## Design principles
-This baseline applies the three Zero Trust tenets. Device trust is a tenet of the model, not a control this release implements:
-- **Verify explicitly** — every access decision uses identity and risk signals (Conditional Access + Identity Protection). Device state is a designed input to the same decision point, but no device signal is collected here and no policy consumes one.
-- **Least privilege** — standing privilege is limited to two passkey-protected emergency accounts, and a Sentinel analytics rule alerts on their interactive sign-ins. Day-to-day admin is designed around PIM: the Conditional Access Administrator eligible assignment for a test admin, and its activation settings, were portal-managed during the licensed lab window. [The images](screenshots.md#privileged-identity-management) evidence activation and justification; MFA is configured rather than shown challenging.
-- **Assume breach** — legacy authentication blocked, high sign-in risk blocked, three Sentinel analytics rules deployed as code, and the emergency-access exclusion groups themselves monitored for membership change.
+The baseline follows the three Zero Trust principles. Device trust is part of the model, but this release doesn't implement it.
+- **Verify explicitly.** Every access decision uses identity and risk signals (Conditional Access and Identity Protection). Device state would feed the same decision, but no device signal is collected here.
+- **Least privilege.** Both emergency accounts and my deploying admin account held standing Global Admin. The admin account was a lab shortcut I'd move to PIM next. Day-to-day admin is designed around PIM: I set up Conditional Access Administrator as an eligible, just-in-time role for a test admin in the portal ([screenshots](screenshots.md#privileged-identity-management)). A Sentinel rule alerts on every interactive emergency-account sign-in.
+- **Assume breach.** Legacy authentication and high-risk sign-ins are blocked, and three Sentinel rules are deployed as code, including one that watches the emergency exclusion groups for membership changes.
 
-## Identity-First Control Map
+## Identity-first control map
 | Zero Trust pillar | NIST 800-207 alignment | Controls | Modules | In this release |
 |-------------------|------------------------|----------|---------|-----------------|
-| Identity | Policy Engine / Policy Decision Point | Conditional Access, MFA, risk-based access, emergency access, PIM | 01, 02, 09 | Historical evidence — PIM is Portal-managed and evidenced for a test admin, not code-defined |
-| Devices | Device trust as a policy input | Intune compliance, Autopilot, update rings | 03, 04, 05 | No — out of scope |
-| Threat protection | Continuous diagnostics | Defender for Endpoint, ASR | 06 | No — out of scope |
-| Detection & response | Monitoring / analytics | Sentinel, KQL analytics | 07 | Yes |
-| Automation & governance | Policy administration | Cloud lifecycle automation, admin governance | 08, 09 | Admin governance only — module 08 is not implemented |
+| Identity | Policy engine / policy decision point | Conditional Access, MFA, risk-based access, emergency access, PIM | 01, 02, 09 | Yes (PIM done in the portal, not in code) |
+| Devices | Device trust as a policy input | Intune compliance, Autopilot, update rings | 03, 04, 05 | No, out of scope |
+| Threat protection | Continuous diagnostics | Defender for Endpoint, ASR | 06 | No, out of scope |
+| Detection and response | Monitoring and analytics | Sentinel, KQL analytics | 07 | Yes |
+| Automation and governance | Policy administration | Cloud lifecycle automation, admin governance | 08, 09 | Admin governance only; module 08 isn't built |
 
-The device and threat-protection rows are retained deliberately. The map is a design artefact: it shows where device trust would attach to this control plane, and the [scope boundary](../README.md#scope-boundary) records why it does not attach here.
+I kept the device and threat-protection rows on purpose. They show where device trust would plug into this control plane; [the README](../README.md#what-i-left-out-and-why) says why it doesn't here.
 
-## Conditional Access Headline
-Conditional Access is the central control plane (Policy Decision Point in Zero Trust terms): it is where identity trust, device trust, and session risk would converge into an enforceable allow/block. Every other module in scope exists to **feed** that decision — identity baseline supplies the principals and baseline groups, Identity Protection supplies risk, and admin governance supplies the privileged-access exceptions. Device state is the input this release does not supply. The policies are rendered from a single reusable Terraform module whose variable surface is frozen and additive, so a "require compliant device" grant condition could be added later without restructuring them:
+## Conditional Access at the centre
+Conditional Access is the decision point: identity, device and session risk come together there as allow or block. Everything else in scope feeds it. The identity baseline supplies users and groups, Identity Protection supplies risk, and admin governance supplies the privileged-access exceptions. Device state is the input this release doesn't supply.
+
+All four policies come from one reusable Terraform module. The module's inputs only ever get added to, so a "require compliant device" control could be added later without changing the existing policies.
 
 | Policy | Intent | Key controls |
 |--------|--------|--------------|
-| Block legacy authentication | Remove the biggest MFA-bypass vector | Block legacy client app types |
-| Require MFA (all users) | Baseline strong auth | Grant: require MFA; exclude break-glass |
-| Block high-risk sign-ins | Stop compromised credentials | Sign-in risk = high → block (P2) |
-| High user-risk remediation | Let high-risk users recover safely | User risk = high → MFA + secure password change (report-only, P2) |
+| Block legacy authentication | Remove the biggest MFA-bypass route | Block legacy client app types |
+| Require MFA (all users) | Baseline strong authentication | Grant: require MFA; exclude break-glass |
+| Block high-risk sign-ins | Stop compromised credentials | Sign-in risk high: block (P2) |
+| High user-risk remediation | Let high-risk users recover safely | User risk high: MFA and secure password change (report-only, P2) |
 
-## Module Interaction Notes
-Sequencing and dependencies as built:
-1. **01 identity-baseline** must exist first — break-glass access and dynamic groups are inputs to downstream Conditional Access and governance work.
-2. **02 conditional-access** consumes the break-glass exclusion groups; Security Defaults must be disabled before it can run.
-3. **07 sentinel** consumes the tenant-scoped Entra log export, and monitors the emergency accounts' interactive sign-ins and membership changes to the exclusion groups that make them exempt.
-4. **09 administrative-governance** supplies the privileged-access model: PIM eligibility for day-to-day admin, and standing Global Administrator confined to the two emergency accounts.
+## How the modules fit together
+In the order I built them:
+1. **01 identity-baseline** comes first. The emergency exclusion groups feed Conditional Access; the dynamic group drives licensing.
+2. **02 conditional-access** uses both exclusion groups. Security Defaults must be off before it runs.
+3. **07 sentinel** uses the tenant-wide Entra log export. It watches the emergency accounts' interactive sign-ins and any membership change to the exclusion groups.
+4. **09 administrative-governance** is the privileged-access model: PIM for day-to-day admin, standing Global Admin for the two emergency accounts.
 
-Modules **03 device-compliance** and **06 defender-endpoint** would have fed a "require compliant device" signal back into 02. That path is out of scope for this release; the reasoning is in the [scope boundary](../README.md#scope-boundary).
+Modules **03 device-compliance** and **06 defender-endpoint** would have fed a "require compliant device" signal back into 02. That's out of scope; see [the README](../README.md#what-i-left-out-and-why).
 
-## Administrative & break-glass model
-Two cloud-only break-glass accounts hold **permanent** Global Administrator (deliberately *not* PIM-eligible, so role activation can never be blocked in an emergency). They are excluded from this repository's Conditional Access policies, but still satisfy Microsoft's mandatory portal MFA with separately tested synced passkeys. A Sentinel scheduled analytics rule alerts on interactive sign-ins by either account (module 07); non-interactive sign-ins are collected but no rule evaluates them. Day-to-day admin is designed to move to **PIM** — eligible assignment, just-in-time activation, MFA and justification — which was configured and exercised in the portal rather than defined in code, with [published historical PIM evidence](screenshots.md#privileged-identity-management) for Conditional Access Administrator on a test admin. MFA on activation is configured, not captured challenging; the later active-list absence is not proof of post-expiry access denial.
+## Admin and break-glass model
+Two cloud-only break-glass accounts hold permanent Global Admin. They're deliberately not PIM-eligible, so role activation can never block them in an emergency. They're excluded from the repo's Conditional Access policies, and they still meet Microsoft's mandatory portal MFA with synced passkeys I tested on each account. A Sentinel rule alerts on their interactive sign-ins. Non-interactive sign-ins are collected, but no rule uses them yet.
 
-## Hybrid Identity Notes
-This lab is cloud-only, but a production landing zone must choose an authentication method:
+Day-to-day admin moves to PIM: eligible assignment, just-in-time activation, MFA and justification. I configured and tested this in the portal for Conditional Access Administrator on a test admin ([screenshots](screenshots.md#privileged-identity-management)).
 
-### Password Hash Synchronization (PHS)
-Simplest and most resilient; passwords (as hashes) sync to Entra, enabling leaked-credential detection and sign-in even if on-prem is down. Recommended default for most modern orgs.
-
-### Pass-Through Authentication (PTA)
-Validates passwords against on-prem AD in real time via lightweight agents; no password hashes in the cloud, but requires agent high-availability and adds a dependency on on-prem availability.
-
-### Active Directory Federation Services (AD FS)
-Full federated SAML; the most complex and highest-maintenance option. Justified only for specific requirements (e.g. smart-card/cert auth, third-party MFA at the IdP, or existing federation estate). For greenfield, prefer PHS + Conditional Access + Identity Protection.
+## Hybrid identity
+This lab is cloud-only. A tenant with on-premises AD would also need to choose an authentication method: password hash sync is the simplest and most resilient default; pass-through authentication and AD FS add on-premises dependencies and only make sense for specific requirements.

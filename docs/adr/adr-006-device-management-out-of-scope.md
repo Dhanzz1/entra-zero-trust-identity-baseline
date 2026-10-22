@@ -4,77 +4,47 @@ This ADR follows the structure in [ADR 000](./adr-000-template.md).
 
 ## Status
 
-Accepted
+Accepted. Amended 21 Oct 2026: the device design notes moved out of empty module folders into one document.
 
 ## Context
 
-Modules 03 through 06 — device compliance, Autopilot, update rings, and Defender for Endpoint — were
-designed as part of this baseline before any of them was built. The plan was to define them in
-Terraform using AzAPI, on the reasoning that AzAPI can reach Azure resources the first-class providers
-have not yet modelled.
+I designed modules 03 to 06 (device compliance, Autopilot, update rings and Defender for Endpoint) as part of this baseline before building any of them. The plan was to define them in Terraform with AzAPI, because AzAPI can reach Azure resources the first-class providers haven't modelled yet.
 
-That reasoning does not hold for Intune. Intune configuration is exposed through Microsoft Graph.
-AzAPI targets Azure Resource Manager. They are different APIs with different authentication and
-different resource models, and no amount of AzAPI configuration reaches a Graph endpoint. The planned
-approach was not merely awkward; it was structurally impossible.
+That doesn't work for Intune. Intune configuration lives in Microsoft Graph, and AzAPI only talks to Azure Resource Manager. They're different APIs with different authentication and resource models, so no AzAPI configuration can reach Intune.
 
-Three alternative providers were evaluated:
+I evaluated three alternative providers:
 
-- `microsoft/msgraph` — public preview at the time of evaluation
-- `deploymenttheory/microsoft365` — community-maintained
-- `terraprovider/microsoft365wp` — community-maintained
+- `microsoft/msgraph`: public preview at the time
+- `deploymenttheory/microsoft365`: community-maintained
+- `terraprovider/microsoft365wp`: community-maintained
 
-Each could express some part of the device-management surface. None was adopted.
+Each could cover part of the device surface. I didn't adopt any of them.
 
-This repository's stated standard is that controls are defined as code and claims are paired with the
-artefact that licenses them. A device-management area configured through a preview or
-community-maintained provider, in a lab, with no production usage behind it, would produce
-configuration that looks like evidence of a capability without being one.
+Every claim in this repo is backed by code or a screenshot. Device configuration built on a preview or community provider, in a lab with no devices to manage, would look like a capability I don't actually have.
 
 ## Decision
 
-Device management is **out of scope** for this repository. Modules 03 through 06 are not implemented,
-and the repository's scope is identity and detection.
+Device management is out of scope. The repo covers identity and detection.
 
-The four directories are retained with their design notes rather than deleted. A documented scope
-boundary is evidence of a decision; a missing directory is evidence of nothing.
+The design notes for modules 03 to 06 are kept in [docs/out-of-scope/device-management.md](../out-of-scope/device-management.md) rather than as empty module folders, so the repo's top level only shows what's built.
 
-The Conditional Access module's variable surface is frozen and additive, so a "require compliant
-device" grant condition could be expressed against it without restructuring the existing policies.
-That is a property of the design, not a commitment to build it.
+The Conditional Access module's inputs only ever get added to, so a "require compliant device" grant control could be added later without changing the existing policies. That's a property of the design, not a commitment to build it.
 
 ## Consequences
 
-- **Positive:** The repository claims only what it can show. Nothing is half-built behind a preview
-  provider, and the controls that rest on portal configuration rather than code — PIM, the
-  emergency-account passkeys — are labelled as such where they are claimed.
-- **Positive:** The reasoning is legible. A reader can see that the boundary was reached by evaluating
-  a provider landscape, not by running out of time.
-- **Negative:** The Zero Trust device pillar is documented and not implemented, so the baseline
-  covers identity and detection rather than the full model. `docs/threat-model.md` records the
-  unmitigated device threat rather than hiding it.
-- **Negative:** All four directories contain design notes and no implementation, which a reader who
-  skips this record could mistake for abandoned work.
+- **Positive:** The repo only claims what it can show. Nothing is half-built on a preview provider, and the parts that are set in the portal rather than in code (PIM, the emergency-account passkeys) say so.
+- **Positive:** The reasoning is visible. The boundary came from evaluating the provider options, not from running out of time.
+- **Positive:** The top level lists only built modules, so the repo reads as finished work.
+- **Negative:** The Zero Trust device pillar is designed but not built, so the baseline covers identity and detection rather than the full model. The [threat model](../threat-model.md) records the unmitigated device threat.
 
-## Alternatives Considered
+## Alternatives considered
 
-- **Adopt `microsoft/msgraph` in public preview** — rejected. A preview provider's resource schema can
-  change without a major version, which would make the published configuration wrong at some
-  unannounced future date, in a repository whose whole argument is that its claims stay true.
-- **Adopt a community-maintained provider** — rejected for this repository rather than on its merits.
-  Either candidate may be a sound choice elsewhere; neither is a foundation this project can support,
-  and adopting one would import a maintenance obligation the scope does not justify.
-- **Configure Intune in the portal and document it as portal-managed** — rejected. That pattern is
-  used for PIM, where the control was genuinely configured and exercised during the licensed lab
-  window, with [published historical evidence](../screenshots.md#privileged-identity-management) for Conditional Access Administrator on a test admin. Repeating it across four
-  modules would turn an infrastructure-as-code repository into a screenshot collection.
-- **Delete the four directories** — rejected. Removing them would erase the decision along with the
-  scope, leaving no record that the boundary was reached deliberately.
+- **Adopt `microsoft/msgraph` in public preview:** rejected. Preview schemas can change without notice, which would break the published configuration.
+- **Adopt a community-maintained provider:** rejected for this repo, not on its merits. Either could be a good choice elsewhere, but I didn't want to take on that maintenance for a lab.
+- **Configure Intune in the portal and document it:** rejected. I did that for PIM, where I configured and tested it ([screenshots](../screenshots.md#privileged-identity-management)). Doing it for four device modules would turn an infrastructure-as-code repo into a screenshot collection.
+- **Keep empty module folders for 03 to 06:** my original choice, changed on 21 Oct 2026. Five of nine numbered folders being design-only made the repo look unfinished at first glance. The notes are kept in one document instead.
 
-## What would change this assessment
+## What would change this
 
-Recorded so the reasoning can be re-examined on its merits, not as planned work:
-
-- A generally available, Microsoft-published Terraform provider covering Intune device compliance.
-- A device estate to manage, which a disposable single-user lab tenant is not — device compliance
-  policy is only meaningful against enrolled devices.
+- A generally available, Microsoft-published Terraform provider for Intune device compliance.
+- A device estate to manage. Device compliance policy only means something against enrolled devices, and this was a small lab tenant with none.

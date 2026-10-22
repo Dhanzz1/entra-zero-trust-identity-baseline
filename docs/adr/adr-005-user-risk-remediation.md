@@ -24,7 +24,7 @@ Deploy `ZT-High-User-Risk-Remediation` as a report-only Conditional Access polic
 - grant controls: `mfa` and `passwordChange`
 - grant operator: `AND`
 - state: `enabledForReportingButNotEnforced`
-- exclusions: break-glass group and guest/external users
+- exclusions: both break-glass exclusion groups and guest/external users
 
 Admins are deliberately in scope for this reference context. At the target size of roughly 100-500 users, self-remediation applies to everyone, and a phishing-resistant admin policy, were one added, would stack on top without changing this policy. At enterprise scale, admin user risk would usually route to a security-team investigation and recovery path instead of automatic self-remediation.
 
@@ -40,6 +40,6 @@ Guests are excluded because they cannot change their home-tenant password in thi
 
 ## Alternatives Considered
 
-- **Block high user risk** — rejected because it creates an administrator-dependent recovery path for legitimate users.
-- **Exclude admins from CA004** — rejected for this reference context; admin-specific hardening is out of scope for this release and would stack on top.
-- **Create a service-account exclusion group now** — rejected because no service accounts exist in the demo tenant. A production scale-up would add a service-account exclusion group and migrate automation to managed identities or workload identity controls.
+- **Block high user risk:** rejected because it creates an administrator-dependent recovery path for legitimate users.
+- **Exclude admins from CA004:** rejected for this reference context; admin-specific hardening is out of scope for this release and would stack on top.
+- **Create a service-account exclusion group now:** rejected because no service accounts exist in the lab tenant. A production scale-up would add a service-account exclusion group and migrate automation to managed identities or workload identity controls.
