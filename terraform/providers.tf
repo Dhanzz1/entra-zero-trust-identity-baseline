@@ -1,5 +1,3 @@
-# Empty block = "use default authentication."
-# The azuread provider automatically reuses your `az login` session,
-# so there are no secrets in your code. (For CI you'd switch to a
-# service principal — note that as a future ADR.)
+# Uses the current `az login` session, so no secrets live in code.
+# CI would use OIDC workload identity federation (see the README's next steps).
 provider "azuread" {}

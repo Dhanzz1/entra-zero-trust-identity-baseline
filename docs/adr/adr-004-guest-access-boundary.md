@@ -33,6 +33,6 @@ Conditional Access remains responsible for authentication, risk, and session con
 
 ## Alternatives Considered
 
-- **Keep `ZT-Restrict-Guest-Access` with Office 365 excluded** — rejected because Microsoft 365 service dependencies and All-resources exclusion behaviour made the effective boundary hard to prove.
-- **Block all guest access with Conditional Access** — rejected because the project needs to preserve controlled collaboration.
-- **Add another guest-specific MFA policy** — rejected because CA002 already covers guests through the all-users assignment.
+- **Keep `ZT-Restrict-Guest-Access` with Office 365 excluded:** rejected because Microsoft 365 service dependencies and All-resources exclusion behaviour made the effective boundary hard to prove.
+- **Block all guest access with Conditional Access:** rejected because the project needs to preserve controlled collaboration.
+- **Add another guest-specific MFA policy:** rejected because CA002 already covers guests through the all-users assignment.

@@ -22,6 +22,6 @@ variable "emergency_account_object_ids" {
 
 variable "protected_group_object_ids" {
   type        = list(string)
-  description = "Exclusion and temporary canary group IDs monitored for membership changes."
+  description = "Emergency exclusion group IDs monitored for membership changes."
   sensitive   = true
 }

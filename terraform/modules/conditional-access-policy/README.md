@@ -2,11 +2,11 @@
 
 ## Purpose
 
-A reusable Terraform sub-module that standardises how every Conditional Access policy in this repo is composed. Instead of writing each policy by hand, the repo calls this one module with different inputs — so all policies share consistent assignment, exclusion, and control patterns, and the intent of each is expressed as data.
+A reusable Terraform sub-module that standardises how every Conditional Access policy in this repo is built. Instead of writing each policy by hand, the repo calls this one module with different inputs, so all policies share consistent assignment, exclusion, and control patterns, and the intent of each is expressed as data.
 
 ## What this codifies
 
-- **Assignment**: included users, included roles, excluded users, and excluded groups (the break-glass group).
+- **Assignment**: included users, included roles, excluded users, and excluded groups (the break-glass exclusion groups).
 - **Conditions**: client app types, sign-in/user risk levels (Entra ID Protection), cloud app include/exclude scope, and future platform/location conditions.
 - **Grant controls**: block, MFA, secure password change, or authentication strength, with `OR`/`AND` operator support.
 - **State**: report-only vs enabled, so policies can be staged safely before enforcement.
@@ -21,10 +21,11 @@ It is consumed by `terraform/conditional-access.tf` to produce the four Conditio
 | `state` | string | `enabledForReportingButNotEnforced`, `enabled`, or `disabled`. |
 | `included_users` | list(string) | Target users, e.g. `["All"]`. |
 | `included_roles` | list(string) | Directory role template IDs targeted by future admin policies. |
+| `included_group_object_ids` | list(string) | Group object IDs included in the policy. |
 | `excluded_users` | list(string) | User selectors excluded from the policy, e.g. `["GuestsOrExternalUsers"]`. |
 | `included_applications` | list(string) | Target cloud apps/resources, e.g. `["All"]`, `["Office365"]`, or application IDs. |
 | `excluded_applications` | list(string) | Cloud apps/resources excluded from the policy, e.g. `["Office365"]` for a Microsoft 365 app-scope exception. |
-| `excluded_group_object_ids` | list(string) | Groups excluded (break-glass). |
+| `excluded_group_object_ids` | list(string) | Groups excluded (the break-glass exclusion groups). |
 | `client_app_types` | list(string) | e.g. `["all"]` or `["exchangeActiveSync","other"]`. |
 | `built_in_controls` | list(string) | Grant controls, e.g. `["block"]` or `["mfa"]`. |
 | `grant_operator` | string | Grant-control operator, e.g. `OR` or `AND`. |

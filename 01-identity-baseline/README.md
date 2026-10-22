@@ -1,48 +1,46 @@
 # 01 Identity Baseline
 
-**Status:** Accounts and groups are code-defined; emergency access is historically **Enabled and tested**. Manual tenant settings were configured during the licensed lab window but have no public evidence. Current operation is unverified. See the [evidence index](../docs/screenshots.md#control-evidence-index).
+**Status:** Accounts and groups are in Terraform. Emergency access is tested with live sign-ins. The tenant settings below were set in the portal. See the [evidence index](../docs/screenshots.md#control-evidence-index).
 
 ## Purpose
 
-This module sets the starting controls for the baseline: emergency access, baseline user grouping, password reset expectations, password protection, naming discipline, and licence assignment.
+This module sets the starting controls for the baseline: emergency access, baseline user grouping, password reset, password protection, group naming and licence assignment.
 
-Zero Trust depends on identity first because every later control, including Conditional Access, device requirements, application access, and privilege governance, assumes that users, groups, recovery paths, and authentication settings are known and controlled.
+Zero Trust starts with identity. Every later control (Conditional Access, device requirements, app access, privilege governance) assumes users, groups, recovery paths and authentication settings are known and controlled.
 
-This folder documents the baseline design. Runnable Terraform for this area lives in the repository `terraform/` folder.
+This folder documents the design. The Terraform lives in the repo's [`terraform/`](../terraform/) folder.
 
-## Implemented as code
+## In Terraform
 
-| Resource | Purpose | Terraform file |
+| Resource | Purpose | File |
 | --- | --- | --- |
-| Two cloud-only break-glass accounts | Provides emergency tenant access when normal identity controls or Conditional Access policies block administrative access. | `terraform/break-glass.tf` |
-| `CA-BreakGlass-Exclude` and `CA-BreakGlass-Exclude-RoleAssignable` groups | Dual emergency exclusions consumed by all four Conditional Access policies. | [break-glass.tf](../terraform/break-glass.tf) |
-| `All-Members-Dynamic` dynamic group | Provides rule-based membership for baseline user targeting and group-based licence assignment. | `terraform/identity-baseline.tf` |
+| Two cloud-only break-glass accounts | Emergency tenant access when normal controls or Conditional Access block admin access | [break-glass.tf](../terraform/break-glass.tf) |
+| `CA-BreakGlass-Exclude` and `CA-BreakGlass-Exclude-RoleAssignable` groups | Both excluded from all four Conditional Access policies | [break-glass.tf](../terraform/break-glass.tf) |
+| `All-Members-Dynamic` dynamic group | Rule-based membership for baseline targeting and group-based licensing | [identity-baseline.tf](../terraform/identity-baseline.tf) |
 
-## Configured manually in the historical lab
+## Configured in the portal
 
-SSPR, password protection, group naming policy and group-based licensing have no public configuration or operational evidence. Their presence in this design must not be read as **Enabled and tested**. The implementation boundary below concerns the lab's pinned `hashicorp/azuread ~> 2.50`, not every currently available provider or version.
+I set these in the portal because the azuread 2.x provider doesn't manage them. I didn't capture screenshots, so I haven't listed them as tested.
 
-| Setting | What it does | Portal path | Why this is not in Terraform yet |
-| --- | --- | --- | --- |
-| Self-service password reset (SSPR) | Allows users to recover access through approved password reset methods, reducing helpdesk dependency and weak manual recovery paths. | Entra admin center -> Protection -> Password reset | Portal-managed in this lab under `hashicorp/azuread ~> 2.50`; no public evidence. |
-| Password protection | Applies custom banned-password terms and smart lockout settings to reduce password guessing and tenant-specific weak password choices. | Entra admin center -> Protection -> Authentication methods -> Password protection | Portal-managed in this lab under `hashicorp/azuread ~> 2.50`; no public evidence. |
-| Group naming policy | Sets naming expectations for Microsoft 365 groups to reduce unmanaged group sprawl. It does not apply to security groups. | Entra admin center -> Groups -> Naming policy | Portal-managed in this lab under `hashicorp/azuread ~> 2.50`; no public evidence. |
-| Group-based licensing | Assigns the EMS E5 / Entra ID P2 licence to the `All-Members-Dynamic` group. | Entra admin center -> Groups -> All-Members-Dynamic -> Licenses | Portal-managed in this lab under `hashicorp/azuread ~> 2.50`; no public evidence. |
+| Setting | What it does | Portal path |
+| --- | --- | --- |
+| Self-service password reset (SSPR) | Lets users recover access through approved methods, reducing helpdesk load and weak manual recovery | Entra admin centre, Protection, Password reset |
+| Password protection | Custom banned-password terms and smart lockout, to reduce password guessing and weak tenant-specific passwords | Entra admin centre, Protection, Authentication methods, Password protection |
+| Group naming policy | Naming rules for Microsoft 365 groups to reduce unmanaged sprawl (doesn't apply to security groups) | Entra admin centre, Groups, Naming policy |
+| Group-based licensing | Assigns EMS E5 / Entra ID P2 to `All-Members-Dynamic` | Entra admin centre, Groups, All-Members-Dynamic, Licenses |
 
 ## Why this matters
 
-Threat: Weak password reset, poor password protection, unmanaged group creation, inconsistent licensing, and legacy or guest sprawl can weaken every later Zero Trust control.
+**Threat:** Weak password reset, poor password protection, unmanaged group creation and inconsistent licensing weaken every later Zero Trust control.
 
-Trade-off: Strict identity baselines improve control consistency but can disrupt users if recovery methods, naming rules, dynamic membership, and licensing are not validated with human review.
+**Trade-off:** A strict baseline makes controls consistent, but can disrupt users if recovery methods, naming rules, dynamic membership and licensing aren't checked by a person first.
 
-Exception handling: Break-glass accounts and both exclusion groups provide the documented exception path for emergency access and downstream Conditional Access exclusions.
+**Exception handling:** The break-glass accounts and both exclusion groups are the emergency exception path.
 
-## Inputs / Outputs
+## Outputs
 
-This documentation area does not run Terraform directly. Terraform is executed from the repository `terraform/` run-root.
-
-Key output consumed by downstream Conditional Access work:
+Terraform runs from the repo's [`terraform/`](../terraform/) root, not from this folder.
 
 | Output | Description |
 | --- | --- |
-| `break_glass_exclude_group_id` | The object ID for the `CA-BreakGlass-Exclude` group, used by downstream Conditional Access policies to exclude break-glass access. |
+| `break_glass_exclude_group_id` | Object ID of the original `CA-BreakGlass-Exclude` group. The Conditional Access policies don't read this output; they use a local list of both exclusion groups in [break-glass.tf](../terraform/break-glass.tf). |

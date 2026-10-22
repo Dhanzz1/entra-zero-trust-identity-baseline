@@ -1,20 +1,16 @@
 terraform {
-  # Don't run this config with a Terraform older than 1.7 — guards against
-  # someone using an incompatible CLI and getting confusing errors.
   required_version = ">= 1.7"
 
   required_providers {
     azuread = {
-      source  = "hashicorp/azuread" # where to download it from (the registry)
-      version = "~> 2.50"           # allow 2.50 up to <3.0 (patch/minor, no major jumps)
+      source  = "hashicorp/azuread"
+      version = "~> 2.50"
     }
     random = {
       source  = "hashicorp/random"
       version = "~> 3.6"
     }
-    # azurerm / azapi are intentionally omitted from this root; the Sentinel
-    # root (terraform/detections) declares azurerm separately.
-    # Declaring a provider you haven't configured can trigger auth errors,
-    # and azuread needs no Azure subscription — keep Step 1 dependency-free.
+    # azurerm is declared only in the detections root. This root needs no Azure
+    # subscription, which keeps Stage 1 free of extra dependencies.
   }
 }

@@ -12,7 +12,7 @@ Legacy authentication protocols (IMAP, POP, SMTP AUTH, older Office clients) can
 
 ## Decision
 
-Deploy a Conditional Access policy that blocks legacy-authentication client app types for all users, excluding the break-glass group. Rolled out in report-only first to measure impact, then enforced.
+Deploy a Conditional Access policy that blocks legacy-authentication client app types for all users, excluding both break-glass exclusion groups. In a real tenant I'd run it in report-only first to find any remaining legacy clients, then enforce it. The lab had no legacy clients, so I enabled it directly.
 
 ## Consequences
 
@@ -21,5 +21,5 @@ Deploy a Conditional Access policy that blocks legacy-authentication client app 
 
 ## Alternatives Considered
 
-- **Security Defaults** — blocks legacy auth but offers no granularity, exclusions, or report-only staging, and is incompatible with a custom Conditional Access framework.
-- **Per-mailbox basic-auth disablement** — narrower and operationally heavier than a tenant-wide CA policy.
+- **Security Defaults:** blocks legacy auth but offers no granularity, exclusions, or report-only staging, and is incompatible with a custom Conditional Access framework.
+- **Per-mailbox basic-auth disablement:** narrower and operationally heavier than a tenant-wide CA policy.
