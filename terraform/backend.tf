@@ -1,6 +1,5 @@
-# Remote backend configuration is intentionally out of scope for this demo.
-#
-# Uncomment and adapt this local-state example only for disposable learning environments.
+# State is local (the default) in this lab. A real deployment would use an
+# azurerm backend with state locking.
 #
 # terraform {
 #   backend "local" {

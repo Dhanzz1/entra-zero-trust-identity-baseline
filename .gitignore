@@ -11,6 +11,8 @@ crash.*.log
 *.credentials
 *.pem
 *.pfx
+
+# Local AI coding-assistant folders. Kept here so a fresh clone never commits them.
 .agents/
 .codex/
 
@@ -21,7 +23,7 @@ docs/architecture-overview.html
 docs/implementation-guide.md
 docs/implementation-guide.html
 
-# Saved Terraform plan files — can embed variable values and secrets. Never commit.
+# Saved Terraform plan files can embed variable values and secrets. Never commit.
 *.tfplan
 tfplan
 ca_enabled

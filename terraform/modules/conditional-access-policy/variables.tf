@@ -34,7 +34,7 @@ variable "excluded_users" {
 }
 
 variable "excluded_group_object_ids" {
-  description = "Group object IDs excluded from the policy (e.g. the break-glass group)."
+  description = "Group object IDs excluded from the policy (e.g. the break-glass exclusion groups)."
   type        = list(string)
   default     = []
 }
