@@ -2,44 +2,28 @@
 
 ## Purpose
 
-The Conditional Access policy framework — the central control plane of this baseline, where identity and risk signals converge into an enforceable allow/block. Device signals are designed but out of scope (see ADR-006). Implemented as a single reusable Terraform module so every policy is consistent, parameterised, and reviewable as code.
+Conditional Access is the centre of this baseline: identity and risk signals come together here as allow or block. Device signals are designed but out of scope (see ADR-006). Every policy comes from one reusable Terraform module, so each one is consistent, parameterised and reviewable as code.
 
-## What this codifies
+## What's in code
 
-Module: `terraform/modules/conditional-access-policy` (inputs: display name, state, users/roles, app scope, excluded groups, client app types, risk levels, grant controls, platform/location placeholders, and optional session controls). Called from `terraform/conditional-access.tf` to produce:
+The module is [`terraform/modules/conditional-access-policy`](../terraform/modules/conditional-access-policy/). [`terraform/conditional-access.tf`](../terraform/conditional-access.tf) calls it four times:
 
-- **Block legacy authentication** — removes the primary MFA-bypass vector.
-- **Require MFA for all users** — baseline strong authentication.
-- **Block high-risk sign-ins** — Entra ID Protection (P2) blocks sessions scored high risk.
-- **High user-risk remediation** — Entra ID Protection (P2) requires MFA plus secure password change for users scored high risk; deployed in report-only mode, which is its final state for this release.
+- **CA001 Block legacy authentication:** removes the main MFA-bypass route.
+- **CA002 Require MFA for all users:** baseline strong authentication.
+- **CA003 Block high-risk sign-ins:** Entra ID Protection (P2) blocks sign-ins scored high risk.
+- **CA004 High user-risk remediation:** Entra ID Protection (P2) requires MFA and a secure password change for high-risk users. Deployed in report-only, which is where it stays for this release.
 
-All policies exclude the emergency-exclusion groups — both the legacy group and the role-assignable group are in the active exclusion path. CA001-CA003 are enforced. CA004 is report-only evaluated: it is evaluated without enforcement, so it neither blocks nor remediates, and promotion to enforced is not planned for this release.
+Every policy excludes both emergency exclusion groups. CA001 to CA003 are enforced. CA004 is evaluated but not enforced, so it doesn't block or remediate.
 
-## Inputs/Outputs
-
-| Name | Type | Description |
-| --- | --- | --- |
-| `display_name` | string | Policy name shown in Entra. |
-| `state` | string | `enabledForReportingButNotEnforced`, `enabled`, or `disabled`. |
-| `included_users` | list(string) | Target users, e.g. `["All"]` or `["GuestsOrExternalUsers"]`. |
-| `included_applications` | list(string) | Target cloud apps/resources, e.g. `["All"]`, `["Office365"]`, or application IDs. |
-| `excluded_applications` | list(string) | Cloud apps/resources excluded from the policy, e.g. `["Office365"]` for guest collaboration access. |
-| `excluded_group_object_ids` | list(string) | Groups excluded (the emergency-exclusion groups — legacy and role-assignable). |
-| `excluded_users` | list(string) | Users excluded from the policy, e.g. `["GuestsOrExternalUsers"]` for controls guests cannot satisfy. |
-| `client_app_types` | list(string) | e.g. `["all"]` or `["exchangeActiveSync","other"]`. |
-| `built_in_controls` | list(string) | Grant controls, e.g. `["block"]` or `["mfa"]`. |
-| `grant_operator` | string | Grant-control operator, e.g. `OR` or `AND`. |
-| `sign_in_risk_levels` | list(string) | Risk levels targeted, e.g. `["high"]`. |
-| `user_risk_levels` | list(string) | User risk levels targeted, e.g. `["high"]`. |
-| `policy_id` (output) | string | Object ID of the created policy. |
+The module's inputs are documented in the [module README](../terraform/modules/conditional-access-policy/README.md).
 
 ## Why this matters
 
-Threat: stolen credentials, MFA-bypassing legacy protocols, actively compromised sessions, and users whose identity has been marked high risk.
+**Threat:** Stolen credentials, legacy protocols that skip MFA, compromised sessions, and users flagged as high risk.
 
-Trade-off: stricter access can break legacy clients and risk controls can false-positive; mitigated by report-only evaluation and emergency-access exclusions.
+**Trade-off:** Stricter access can break legacy clients, and risk controls can false-positive. Report-only evaluation and the emergency exclusions reduce that risk.
 
-Exception handling: both emergency-exclusion groups are excluded from every policy; scoped, documented exceptions are used for any legacy line-of-business need. Guests are excluded from CA004 because they cannot satisfy a home-tenant password change in this tenant. Guest authorization belongs to identity governance — access reviews and entitlement management — rather than to a Conditional Access block. Neither is implemented in this release. Full rationale in ADR-004, including the What If service-dependency limitation that made the original policy unprovable.
+**Exception handling:** Both emergency exclusion groups are excluded from every policy. A legacy line-of-business need would get a scoped, documented exclusion. Guests are excluded from CA004 because they can't change their home-tenant password here. Guest access is controlled by Teams, Microsoft 365 group and SharePoint sharing membership, not by a Conditional Access policy. I originally built a guest policy (`ZT-Restrict-Guest-Access`) and removed it; the reasons are in ADR-004.
 
 ## Related ADRs
 
